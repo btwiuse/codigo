@@ -24,11 +24,22 @@
       rel="stylesheet"
       href="/vscode/out/vs/workbench/workbench.web.main.css"
     >
+    <script type="importmap">
+      {
+        "imports": {
+          "eruda": "https://esm.sh/eruda"
+        }
+      }
+    </script>
   </head>
 
   <body aria-label=""></body>
 
   <!-- Startup (do not modify order of script tags!) -->
+  <script type="module" async>
+    import eruda from "eruda";
+    eruda.init();
+  </script>
   <script>
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "/workbench.json", false);
