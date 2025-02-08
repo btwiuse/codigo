@@ -1,11 +1,11 @@
 package codigo
 
 import (
-	"archive/zip"
-	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,20 +15,18 @@ import (
 
 	"github.com/btwiuse/codigo/bridge"
 	"github.com/btwiuse/codigo/product"
-	"github.com/btwiuse/codigo/zipfs"
 	"github.com/btwiuse/wsconn"
+	"github.com/mholt/archives"
 	"tractor.dev/toolkit-go/duplex/codec"
 	"tractor.dev/toolkit-go/duplex/fn"
 	"tractor.dev/toolkit-go/duplex/mux"
 	"tractor.dev/toolkit-go/duplex/talk"
-	"tractor.dev/toolkit-go/engine/fs"
-	"tractor.dev/toolkit-go/engine/fs/workingpathfs"
 )
 
 //go:embed extension assets
 var embedded embed.FS
 
-var vscodeReader *zip.Reader
+var archivefs fs.FS
 
 func DownloadAndUnzipVSCode() {
 	vscodeURL := os.Getenv("VSCODE_WEB_URL")
@@ -45,21 +43,23 @@ func DownloadAndUnzipVSCode() {
 		panic(err)
 	}
 
-	vscodeZipPath := filepath.Join(homeDir, ".codigo", "vscode-web.zip")
+	vscodeArchiveFile := filepath.Base(vscodeURL)
+	vscodeArchivePath := filepath.Join(homeDir, ".codigo", vscodeArchiveFile)
+	isZip := strings.HasSuffix(vscodeArchivePath, ".zip")
 
-	if _, err := os.Stat(vscodeZipPath); os.IsNotExist(err) {
-		log.Printf("Downloading VSCODE_WEB_URL: %s\n", vscodeURL)
+	if _, err := os.Stat(vscodeArchivePath); os.IsNotExist(err) {
+		log.Printf("Downloading VSCODE_WEB_URL=%s to ~/.codigo\n", vscodeURL)
 		resp, err := http.Get(vscodeURL)
 		if err != nil {
 			panic(err)
 		}
 		defer resp.Body.Close()
 
-		if err := os.MkdirAll(filepath.Dir(vscodeZipPath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(vscodeArchivePath), 0755); err != nil {
 			panic(err)
 		}
 
-		out, err := os.Create(vscodeZipPath)
+		out, err := os.Create(vscodeArchivePath)
 		if err != nil {
 			panic(err)
 		}
@@ -68,14 +68,21 @@ func DownloadAndUnzipVSCode() {
 		if _, err := io.Copy(out, resp.Body); err != nil {
 			panic(err)
 		}
+	} else {
+		log.Println("Using archive", vscodeArchiveFile)
 	}
 
-	b, err := os.ReadFile(vscodeZipPath)
+	archivefs, err = archives.FileSystem(context.Background(), vscodeArchivePath, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	vscodeReader, err = zip.NewReader(bytes.NewReader(b), int64(len(b)))
+	// assume ./out/ is at archive file root for tar.gz
+	if !isZip {
+		return
+	}
+
+	archivefs, err = fs.Sub(archivefs, "dist/vscode")
 	if err != nil {
 		panic(err)
 	}
@@ -182,7 +189,6 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	mux.Handle("/extension/", http.FileServerFS(embedded))
 
-	fsys := workingpathfs.New(zipfs.New(vscodeReader), "dist")
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			http.ServeFileFS(w, r, embedded, "assets/index.html")
@@ -194,7 +200,7 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.FileServerFS(fsys).ServeHTTP(w, r)
+		http.FileServerFS(archivefs).ServeHTTP(w, r)
 	}))
 
 	mux.HandleFunc("/bridge", wb.handleBridge)

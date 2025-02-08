@@ -7,6 +7,7 @@ require (
 	github.com/btwiuse/version v0.0.1
 	github.com/btwiuse/wsconn v0.0.3
 	github.com/creativeprojects/go-selfupdate v1.4.0
+	github.com/mholt/archives v0.1.0
 	github.com/webteleport/utils v0.2.18
 	github.com/webteleport/wtf v0.1.30
 	k0s.io/pkg/agent v0.1.17
