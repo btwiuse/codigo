@@ -24,6 +24,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const terminal = createTerminal(peer);
   terminal.show();
+
+  // Register command to create new terminal
+  context.subscriptions.push(
+    vscode.commands.registerCommand("extension.createNewTerminal", () => {
+      const newTerminal = createTerminal(peer);
+      newTerminal.show();
+    }),
+  );
 }
 
 function createTerminal(peer: any) {

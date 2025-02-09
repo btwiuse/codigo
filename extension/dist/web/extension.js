@@ -2236,6 +2236,12 @@ async function activate(context) {
   context.subscriptions.push(fs);
   const terminal = createTerminal(peer);
   terminal.show();
+  context.subscriptions.push(
+    vscode.commands.registerCommand("extension.createNewTerminal", () => {
+      const newTerminal = createTerminal(peer);
+      newTerminal.show();
+    })
+  );
 }
 function createTerminal(peer) {
   const writeEmitter = new vscode.EventEmitter();
