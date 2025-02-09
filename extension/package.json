@@ -18,9 +18,23 @@
     "commands": [
       {
         "command": "extension.createNewTerminal",
-        "title": "Codigo: Create New Terminal"
+        "title": "Create New Terminal",
+        "category": "Codigo",
+        "icon": {
+          "light": "./resources/icons/new-terminal-light.svg",
+          "dark": "./resources/icons/new-terminal-dark.svg"
+        }
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "isWeb || !isWeb",
+          "group": "navigation",
+          "command": "extension.createNewTerminal"
+        }
+      ]
+    }
   },
   "scripts": {
     "compile-web": "npm run check-types && node esbuild.js",

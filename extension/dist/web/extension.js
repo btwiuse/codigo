@@ -2235,11 +2235,11 @@ async function activate(context) {
   const fs = new HostFS(peer);
   context.subscriptions.push(fs);
   const terminal = createTerminal(peer);
-  terminal.show();
+  await vscode.commands.executeCommand("workbench.action.terminal.moveToEditor");
   context.subscriptions.push(
-    vscode.commands.registerCommand("extension.createNewTerminal", () => {
+    vscode.commands.registerCommand("extension.createNewTerminal", async () => {
       const newTerminal = createTerminal(peer);
-      newTerminal.show();
+      await vscode.commands.executeCommand("workbench.action.terminal.moveToEditor");
     })
   );
 }

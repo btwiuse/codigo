@@ -23,13 +23,14 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(fs);
 
   const terminal = createTerminal(peer);
-  terminal.show();
+  await vscode.commands.executeCommand("workbench.action.terminal.moveToEditor");
 
   // Register command to create new terminal
   context.subscriptions.push(
-    vscode.commands.registerCommand("extension.createNewTerminal", () => {
+    vscode.commands.registerCommand("extension.createNewTerminal", async () => {
       const newTerminal = createTerminal(peer);
-      newTerminal.show();
+      // newTerminal.show();
+      await vscode.commands.executeCommand("workbench.action.terminal.moveToEditor");
     }),
   );
 }
