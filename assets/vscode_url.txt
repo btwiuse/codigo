@@ -1,1 +1,1 @@
-https://github.com/progrium/vscode-web/releases/download/v1/vscode-web-1.92.1-patched.zip
+https://github.com/btwiuse/vscodium/releases/download/1.96.4.25040/vscodium-web-1.96.4.25040.tar.gz

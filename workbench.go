@@ -45,7 +45,6 @@ func DownloadAndUnzipVSCode() {
 
 	vscodeArchiveFile := filepath.Base(vscodeURL)
 	vscodeArchivePath := filepath.Join(homeDir, ".codigo", vscodeArchiveFile)
-	isZip := strings.HasSuffix(vscodeArchivePath, ".zip")
 
 	if _, err := os.Stat(vscodeArchivePath); os.IsNotExist(err) {
 		log.Printf("Downloading VSCODE_WEB_URL=%s to ~/.codigo\n", vscodeURL)
@@ -77,14 +76,12 @@ func DownloadAndUnzipVSCode() {
 		panic(err)
 	}
 
-	// assume ./out/ is at archive file root for tar.gz
-	if !isZip {
-		return
-	}
-
-	archivefs, err = fs.Sub(archivefs, "dist/vscode")
-	if err != nil {
-		panic(err)
+	// assume ./out/ is at archive file root for tar.gz, unless
+	if vscodeURL == "https://github.com/progrium/vscode-web/releases/download/v1/vscode-web-1.92.1-patched.zip" {
+		archivefs, err = fs.Sub(archivefs, "dist/vscode")
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -205,5 +202,5 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	mux.HandleFunc("/bridge", wb.handleBridge)
 
-	mux.ServeHTTP(w, r)
+	StripWorkerBlockedCalls(mux).ServeHTTP(w, r)
 }
