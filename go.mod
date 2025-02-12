@@ -10,8 +10,8 @@ require (
 	github.com/mholt/archives v0.1.0
 	github.com/webteleport/utils v0.2.18
 	github.com/webteleport/wtf v0.1.30
-	k0s.io/pkg/agent v0.1.17
-	k0s.io/pkg/asciitransport v0.1.17
+	k0s.io/pkg/agent v0.1.18-alpha.8
+	k0s.io/pkg/asciitransport v0.1.18-alpha.8
 	tractor.dev/toolkit-go v0.0.0-20250103001615-9a6753936c19
 )
 
@@ -28,8 +28,10 @@ require (
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/btwiuse/pretty v0.2.1 // indirect
 	github.com/btwiuse/rng v0.0.1 // indirect
+	github.com/btwiuse/tags v0.0.2 // indirect
 	github.com/creack/pty v1.1.24 // indirect
 	github.com/davidmz/go-pageant v1.0.2 // indirect
+	github.com/denisbrodbeck/machineid v1.0.1 // indirect
 	github.com/docker/docker v27.3.1+incompatible // indirect
 	github.com/dsnet/compress v0.0.2-0.20230904184137-39efe44ab707 // indirect
 	github.com/ebi-yade/altsvc-go v0.1.1 // indirect
@@ -90,7 +92,7 @@ require (
 	google.golang.org/protobuf v1.36.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k0s.io v0.1.17 // indirect
+	k0s.io v0.1.18-alpha.8 // indirect
 	k8s.io/apimachinery v0.32.0 // indirect
 	nhooyr.io/websocket v1.8.17 // indirect
 )
