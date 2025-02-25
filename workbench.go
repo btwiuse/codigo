@@ -45,8 +45,13 @@ func DownloadAndUnzipVSCode() {
 
 	vscodeArchiveFile := filepath.Base(vscodeURL)
 	vscodeArchivePath := filepath.Join(homeDir, ".codigo", vscodeArchiveFile)
+	vscodeExtractPath := filepath.Join(homeDir, ".codigo", "dev")
+	isExtracted := false
 
-	if _, err := os.Stat(vscodeArchivePath); os.IsNotExist(err) {
+	if _, err := os.Stat(vscodeExtractPath); !os.IsNotExist(err) {
+		log.Printf("Using extracted archive %s\n", vscodeExtractPath)
+		isExtracted = true
+	} else if _, err := os.Stat(vscodeArchivePath); os.IsNotExist(err) {
 		log.Printf("Downloading VSCODE_WEB_URL=%s to ~/.codigo\n", vscodeURL)
 		resp, err := http.Get(vscodeURL)
 		if err != nil {
@@ -71,9 +76,13 @@ func DownloadAndUnzipVSCode() {
 		log.Println("Using archive", vscodeArchiveFile)
 	}
 
-	archivefs, err = archives.FileSystem(context.Background(), vscodeArchivePath, nil)
-	if err != nil {
-		panic(err)
+	if !isExtracted {
+		archivefs, err = archives.FileSystem(context.Background(), vscodeArchivePath, nil)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		archivefs = os.DirFS(vscodeExtractPath)
 	}
 
 	// assume ./out/ is at archive file root for tar.gz, unless
@@ -202,5 +211,5 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	mux.HandleFunc("/bridge", wb.handleBridge)
 
-	StripWorkerBlockedCalls(mux).ServeHTTP(w, r)
+	mux.ServeHTTP(w, r)
 }
