@@ -147,17 +147,25 @@ func (wb *Workbench) ensureExtension(r *http.Request) {
 	}
 
 	foundExtension := false
+outerLoop:
 	for i, e := range wb.AdditionalBuiltinExtensions {
-		if u, ok := e.(*URIComponents); ok && u.Path != "/extension" {
-			continue
+		switch e := e.(type) {
+		case *GalleryExtensionInfo:
+			if e.ID == VSCodigoBridge.ID {
+				foundExtension = true
+				break outerLoop
+			}
+		case *URIComponents:
+			if e.Path == "/extension" {
+				wb.AdditionalBuiltinExtensions[i] = &URIComponents{
+					Scheme:    o.Scheme,
+					Authority: o.Host,
+					Path:      "/extension",
+				}
+				foundExtension = true
+				break outerLoop
+			}
 		}
-		wb.AdditionalBuiltinExtensions[i] = &URIComponents{
-			Scheme:    o.Scheme,
-			Authority: o.Host,
-			Path:      "/extension",
-		}
-		foundExtension = true
-		break
 	}
 
 	if !foundExtension {
@@ -215,6 +223,11 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if r.URL.Path == "/bridge.js" {
 			http.ServeFileFS(w, r, embedded, "assets/bridge.js")
+			return
+		}
+
+		if r.URL.Path == "/product.json" {
+			http.ServeFileFS(w, r, embedded, "assets/product.json")
 			return
 		}
 
