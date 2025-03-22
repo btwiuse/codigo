@@ -3,7 +3,6 @@ package codigo
 import (
 	"context"
 	"embed"
-	"encoding/json"
 	"io"
 	"io/fs"
 	"log"
@@ -204,15 +203,6 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/workbench.json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		wb.ensureExtension(r)
-		w.Header().Add("content-type", "application/json")
-		enc := json.NewEncoder(w)
-		if err := enc.Encode(wb); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}))
-
 	mux.Handle("/extension/", http.FileServerFS(embedded))
 
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -228,6 +218,11 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if r.URL.Path == "/product.json" {
 			http.ServeFileFS(w, r, embedded, "assets/product.json")
+			return
+		}
+
+		if r.URL.Path == "/workbench.json" {
+			http.ServeFileFS(w, r, embedded, "assets/workbench.json")
 			return
 		}
 
