@@ -1,0 +1,23 @@
+{
+  "productConfiguration": {
+    "nameLong": "Codigo Editor",
+    "enabledTelemetryLevels": {
+      "error": false,
+      "usage": false
+    },
+    "serverApplicationName": ""
+  },
+  "additionalBuiltinExtensions": [
+    {
+      "id": "btwiuse.codigo-bridge",
+      "preRelease": true
+    }
+  ],
+  "folderUri": {
+    "scheme": "hostfs",
+    "path": "/"
+  },
+  "initialColorTheme": {
+    "themeType": ""
+  }
+}

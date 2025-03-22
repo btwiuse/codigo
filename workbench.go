@@ -3,12 +3,10 @@ package codigo
 import (
 	"context"
 	"embed"
-	"encoding/json"
 	"io"
 	"io/fs"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -114,72 +112,12 @@ type Workbench struct {
 	ProductConfiguration        product.Configuration `json:"productConfiguration"`
 	AdditionalBuiltinExtensions []BuiltinExtension    `json:"additionalBuiltinExtensions,omitempty"`
 	FolderURI                   *URIComponents        `json:"folderUri,omitempty"`
-	InitialColorTheme           ColorScheme           `json:"initialColorTheme,omitempty"`
 
 	FS fs.FS `json:"-"`
 }
 
 func (wb *Workbench) GetFS() fs.FS {
 	return wb.FS
-}
-
-type ColorScheme struct {
-	ThemeType string            `json:"themeType"` // "dark" | "light" | "hcLight" | "hcDark"
-	Colors    map[string]string `json:"colors,omitempty"`
-}
-
-func (wb *Workbench) setColorScheme(t string) {
-	wb.InitialColorTheme.ThemeType = t
-}
-
-var VSCodigoBridge = &GalleryExtensionInfo{
-	ID:         "btwiuse.codigo-bridge",
-	PreRelease: true,
-}
-
-func (wb *Workbench) ensureExtension(r *http.Request) {
-	origin := r.Header.Get("Origin")
-
-	o, err := url.Parse(origin)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	foundExtension := false
-outerLoop:
-	for i, e := range wb.AdditionalBuiltinExtensions {
-		switch e := e.(type) {
-		case *GalleryExtensionInfo:
-			if e.ID == VSCodigoBridge.ID {
-				foundExtension = true
-				break outerLoop
-			}
-		case *URIComponents:
-			if e.Path == "/extension" {
-				wb.AdditionalBuiltinExtensions[i] = &URIComponents{
-					Scheme:    o.Scheme,
-					Authority: o.Host,
-					Path:      "/extension",
-				}
-				foundExtension = true
-				break outerLoop
-			}
-		}
-	}
-
-	if !foundExtension {
-		wb.AdditionalBuiltinExtensions = append(wb.AdditionalBuiltinExtensions, VSCodigoBridge)
-	}
-}
-
-func (wb *Workbench) ensureFolder() {
-	if wb.FolderURI == nil {
-		wb.FolderURI = &URIComponents{
-			Scheme: "hostfs",
-			Path:   "/",
-		}
-	}
 }
 
 func (wb *Workbench) handleBridge(w http.ResponseWriter, r *http.Request) {
@@ -199,19 +137,7 @@ func (wb *Workbench) handleBridge(w http.ResponseWriter, r *http.Request) {
 }
 
 func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// wb.setColorScheme("dark")
-	wb.ensureFolder()
-
 	mux := http.NewServeMux()
-
-	mux.Handle("/workbench.json", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		wb.ensureExtension(r)
-		w.Header().Add("content-type", "application/json")
-		enc := json.NewEncoder(w)
-		if err := enc.Encode(wb); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	}))
 
 	mux.Handle("/extension/", http.FileServerFS(embedded))
 
@@ -228,6 +154,11 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if r.URL.Path == "/product.json" {
 			http.ServeFileFS(w, r, embedded, "assets/product.json")
+			return
+		}
+
+		if r.URL.Path == "/workbench.json" {
+			http.ServeFileFS(w, r, embedded, "assets/workbench.json")
 			return
 		}
 
