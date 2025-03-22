@@ -1,16 +1,17 @@
 {
-  "name": "go-vscode",
-  "displayName": "go-vscode",
-  "publisher": "progrium",
+  "name": "codigo-bridge",
+  "displayName": "Codigo Bridge",
+  "publisher": "btwiuse",
   "description": "",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.66.0"
+    "vscode": "^1.90.0"
   },
   "categories": [
     "Other"
   ],
   "activationEvents": [
+    "onTerminalProfile:extension.terminal-profile",
     "onFileSystem:hostfs"
   ],
   "browser": "./dist/web/extension.js",
@@ -24,6 +25,16 @@
           "light": "./resources/icons/new-terminal-light.svg",
           "dark": "./resources/icons/new-terminal-dark.svg"
         }
+      },
+      {
+        "command": "extension.createNewTerminal2",
+        "title": "Create New Terminal2",
+        "category": "Codigo"
+      },
+      {
+        "command": "extension.createNewTerminal3",
+        "title": "Create New Terminal3",
+        "category": "Codigo"
       }
     ],
     "menus": {
@@ -34,6 +45,14 @@
           "command": "extension.createNewTerminal"
         }
       ]
+    },
+    "terminal": {
+      "profiles": [
+        {
+          "id": "extension.terminal-profile",
+          "title": "Extension Terminal Profile"
+        }
+      ]
     }
   },
   "scripts": {
@@ -42,6 +61,8 @@
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {
+    "@polkadot/extension-inject": "^0.58.4",
+    "@polkadot/types-augment": "^15.7.1",
     "@types/vscode": "^1.90.0",
     "@vscode/test-web": "^0.0.54",
     "esbuild": "^0.21.5",

@@ -287,6 +287,99 @@ var HostFS = class _HostFS {
   }
 };
 
+// src/web/polkadotBridge.ts
+var PolkadotBridge = class {
+  constructor(port) {
+    this.pending = /* @__PURE__ */ new Map();
+    this.subscriptions = /* @__PURE__ */ new Map();
+    this.idCounter = 0;
+    this.port = port;
+    this.port.onmessage = this.handleMessage.bind(this);
+  }
+  handleMessage(event) {
+    const { data } = event;
+    if (data.type === "bridge-response") {
+      const handler = this.pending.get(data.id);
+      if (handler) {
+        data.error ? handler.reject(new Error(data.error)) : handler.resolve(data.result);
+        this.pending.delete(data.id);
+      }
+    }
+    if (data.type === "bridge-update") {
+      const callback = this.subscriptions.get(data.subId);
+      callback?.(data.result);
+    }
+  }
+  sendCommand(path, args) {
+    return new Promise((resolve, reject) => {
+      const id = this.idCounter++;
+      this.pending.set(id, { resolve, reject });
+      this.port.postMessage({
+        type: "bridge-command",
+        id,
+        path,
+        args: JSON.parse(JSON.stringify(args))
+        // Cloneable data only
+      });
+    });
+  }
+  async connect() {
+    return new Promise((resolve, reject) => {
+      const handler = (event) => {
+        if (event.data.cmd === "CONNECT_SUCCESS") resolve();
+        if (event.data.cmd === "CONNECT_ERROR") {
+          reject(new Error(event.data.error));
+        }
+        this.port.removeEventListener("message", handler);
+      };
+      this.port.addEventListener("message", handler);
+      this.port.postMessage({ cmd: "CONNECT" });
+    });
+  }
+  // Accounts API
+  get accounts() {
+    return {
+      get: (anyType) => this.sendCommand(["accounts", "get"], [anyType]),
+      subscribe: (callback) => {
+        const subId = `sub-${Date.now()}-${Math.random()}`;
+        this.port.postMessage({
+          type: "bridge-subscribe",
+          subId
+        });
+        this.subscriptions.set(subId, callback);
+        return () => {
+          this.port.postMessage({
+            type: "bridge-unsubscribe",
+            subId
+          });
+          this.subscriptions.delete(subId);
+        };
+      }
+    };
+  }
+  // Signer API
+  get signer() {
+    return {
+      signRaw: (options) => this.sendCommand(["signer", "signRaw"], [options]),
+      signPayload: (payload) => this.sendCommand(["signer", "signPayload"], [payload])
+    };
+  }
+  // Metadata API
+  get metadata() {
+    return {
+      get: () => this.sendCommand(["metadata", "get"], []),
+      provide: (definition) => this.sendCommand(["metadata", "provide"], [definition])
+    };
+  }
+  // Provider API
+  get provider() {
+    return {
+      listProviders: () => this.sendCommand(["provider", "listProviders"], []),
+      startProvider: (key) => this.sendCommand(["provider", "startProvider"], [key])
+    };
+  }
+};
+
 // src/duplex/duplex.min.js
 var hr = Object.defineProperty;
 var yr = (t2, e) => {
@@ -2227,6 +2320,21 @@ async function activate(context) {
     console.error("not running in browser");
     return;
   }
+  const chan = new MessageChannel();
+  const bridge = new PolkadotBridge(chan.port1);
+  self.postMessage({ type: "_bridge_port", port: chan.port2 }, [chan.port2]);
+  bridge.connect().then(async () => {
+    const accounts = await bridge.accounts.get(true);
+    console.log("got", { accounts });
+    const unsubscribe = bridge.accounts.subscribe((accounts2) => {
+      console.log("Accounts updated:", accounts2);
+    });
+    const signature = await bridge.signer.signRaw({
+      address: accounts[0].address,
+      data: "Hello World"
+    });
+    console.log("signature", { signature });
+  }).catch((error) => console.error("Connection failed:", error));
   const channel = new MessageChannel();
   self.postMessage({ type: "_port", port: channel.port2 }, [channel.port2]);
   const sess = new Je(new Ft(channel.port1));
@@ -2235,21 +2343,77 @@ async function activate(context) {
   const fs = new HostFS(peer);
   context.subscriptions.push(fs);
   const terminal = createTerminal(peer);
-  await vscode.commands.executeCommand("workbench.action.terminal.moveToEditor");
   context.subscriptions.push(
     vscode.commands.registerCommand("extension.createNewTerminal", async () => {
       const newTerminal = createTerminal(peer);
-      await vscode.commands.executeCommand("workbench.action.terminal.moveToEditor");
     })
+  );
+  context.subscriptions.push(
+    vscode.window.registerTerminalProfileProvider(
+      "extension.terminal-profile",
+      {
+        provideTerminalProfile(token) {
+          return {
+            options: {
+              name: "bash",
+              pty: newPty(peer)
+              // location: vscode.TerminalLocation.Editor,
+              // isTransient: false,
+            }
+          };
+        }
+      }
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "extension.createNewTerminal2",
+      async () => {
+        vscode.window.showInformationMessage(
+          `appHost: ${vscode.env.appHost}
+appName: ${vscode.env.appName}
+appRoot: ${vscode.env.appRoot}
+isNewAppInstall: ${vscode.env.isNewAppInstall}
+isTelemetryEnabled: ${vscode.env.isTelemetryEnabled}
+language: ${vscode.env.language}
+logLevel: ${vscode.env.logLevel}
+machineId: ${vscode.env.machineId}
+remoteName: ${vscode.env.remoteName}
+sessionId: ${vscode.env.sessionId}
+shell: ${vscode.env.shell}
+uiKind: ${vscode.env.uiKind}
+uriScheme: ${vscode.env.uriScheme}`
+        );
+      }
+    )
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "extension.createNewTerminal3",
+      async () => {
+        vscode.window.createTerminal({
+          name: `EchoShell`,
+          pty: echoPty(),
+          location: vscode.TerminalLocation.Editor
+        });
+      }
+    )
   );
 }
 function createTerminal(peer) {
+  return vscode.window.createTerminal({
+    name: `WebShell`,
+    pty: newPty(peer),
+    location: vscode.TerminalLocation.Editor
+  });
+}
+function newPty(peer) {
   const writeEmitter = new vscode.EventEmitter();
   let channel = void 0;
   let log = vscode.window.createOutputChannel("go-vscode");
   const dec = new TextDecoder();
   const enc = new TextEncoder();
-  const pty = {
+  return {
     onDidWrite: writeEmitter.event,
     open: (initialDimensions) => {
       (async () => {
@@ -2310,6 +2474,47 @@ function createTerminal(peer) {
       }
     }
   };
-  return vscode.window.createTerminal({ name: `Shell`, pty });
+}
+function echoPty() {
+  const writeEmitter = new vscode.EventEmitter();
+  let log = vscode.window.createOutputChannel("go-vscode-echo");
+  return {
+    onDidWrite: writeEmitter.event,
+    open: (initialDimensions) => {
+      (async () => {
+        if (initialDimensions) {
+          const { columns, rows } = initialDimensions;
+          let payload = JSON.stringify({
+            "version": 2,
+            "width": columns,
+            "height": rows,
+            "cmd": ["/bin/bash"],
+            "env": {
+              "TERM": "xterm-256color",
+              "FOO": "BAR"
+            }
+          });
+          log.appendLine(`open: ${payload}`);
+        }
+      })();
+    },
+    close: () => {
+      log.appendLine(`close`);
+    },
+    handleInput: (data) => {
+      let payload = JSON.stringify([0, "i", data]);
+      writeEmitter.fire(data);
+      log.appendLine(`handleInput: ${payload}`);
+    },
+    setDimensions: (dimensions) => {
+      const { columns, rows } = dimensions;
+      let payload = JSON.stringify({
+        "version": 2,
+        "width": columns,
+        "height": rows
+      });
+      log.appendLine(`setDimensions: ${payload}`);
+    }
+  };
 }
 //# sourceMappingURL=extension.js.map
