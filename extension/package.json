@@ -1,8 +1,9 @@
 {
-  "name": "codigo-bridge",
+  "name": "arch",
   "displayName": "Codigo Bridge",
   "publisher": "btwiuse",
   "description": "Codigo editor bridge extension",
+  "repository": "https://github.com/microsoft/vscode",
   "version": "0.0.2",
   "engines": {
     "vscode": "^1.90.0"
