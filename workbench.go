@@ -22,7 +22,7 @@ import (
 	"tractor.dev/toolkit-go/duplex/talk"
 )
 
-//go:embed assets extension
+//go:embed assets
 var embedded embed.FS
 
 var archivefs fs.FS
@@ -154,16 +154,6 @@ outerLoop:
 				foundExtension = true
 				break outerLoop
 			}
-		case *URIComponents:
-			if e.Path == "/extension" {
-				wb.AdditionalBuiltinExtensions[i] = &URIComponents{
-					Scheme:    o.Scheme,
-					Authority: o.Host,
-					Path:      "/extension",
-				}
-				foundExtension = true
-				break outerLoop
-			}
 		}
 	}
 
@@ -202,8 +192,6 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wb.ensureFolder()
 
 	mux := http.NewServeMux()
-
-	mux.Handle("/extension/", http.FileServerFS(embedded))
 
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {

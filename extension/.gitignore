@@ -1,6 +1,0 @@
-node_modules
-.node_modules
-_node_modules
-*.map
-*.lock
-*.vsix
