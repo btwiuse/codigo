@@ -21,7 +21,7 @@ import (
 	"tractor.dev/toolkit-go/duplex/talk"
 )
 
-//go:embed assets extension
+//go:embed assets
 var embedded embed.FS
 
 var archivefs fs.FS
@@ -138,8 +138,6 @@ func (wb *Workbench) handleBridge(w http.ResponseWriter, r *http.Request) {
 
 func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	mux := http.NewServeMux()
-
-	mux.Handle("/extension/", http.FileServerFS(embedded))
 
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
