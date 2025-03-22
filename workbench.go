@@ -139,31 +139,31 @@ func (wb *Workbench) handleBridge(w http.ResponseWriter, r *http.Request) {
 func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	mux := http.NewServeMux()
 
-	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
-			http.ServeFileFS(w, r, embedded, "assets/index.html")
-			return
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/":
+			ServeFileWithFallback(w, r, embedded, "assets/index.html")
+		case "/bridge.js":
+			ServeFileWithFallback(w, r, embedded, "assets/bridge.js")
+		case "/product.json":
+			ServeFileWithFallback(w, r, embedded, "assets/product.json")
+		case "/workbench.json":
+			ServeFileWithFallback(w, r, embedded, "assets/workbench.json")
+		default:
+			http.FileServerFS(archivefs).ServeHTTP(w, r)
 		}
-
-		if r.URL.Path == "/bridge.js" {
-			http.ServeFileFS(w, r, embedded, "assets/bridge.js")
-			return
-		}
-
-		if r.URL.Path == "/product.json" {
-			http.ServeFileFS(w, r, embedded, "assets/product.json")
-			return
-		}
-
-		if r.URL.Path == "/workbench.json" {
-			http.ServeFileFS(w, r, embedded, "assets/workbench.json")
-			return
-		}
-
-		http.FileServerFS(archivefs).ServeHTTP(w, r)
-	}))
+	})
 
 	mux.HandleFunc("/bridge", wb.handleBridge)
 
 	mux.ServeHTTP(w, r)
+}
+
+func ServeFileWithFallback(w http.ResponseWriter, r *http.Request, embeddedFS fs.FS, path string) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		http.ServeFileFS(w, r, embeddedFS, path)
+	} else {
+		log.Println("Loading local file:", path)
+		http.ServeFile(w, r, path)
+	}
 }
