@@ -9,7 +9,7 @@
   },
   "additionalBuiltinExtensions": [
     {
-      "id": "btwiuse.codigo-bridge",
+      "id": "btwiuse.codigo-extension-pack",
       "preRelease": true
     }
   ],
