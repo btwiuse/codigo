@@ -1,6 +1,6 @@
 module github.com/btwiuse/codigo
 
-go 1.24rc2
+go 1.24
 
 require (
 	github.com/btwiuse/multicall v0.0.5
