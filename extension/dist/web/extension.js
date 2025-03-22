@@ -33,7 +33,7 @@ __export(extension_exports, {
   activate: () => activate
 });
 module.exports = __toCommonJS(extension_exports);
-var vscode = __toESM(require("vscode"));
+var vscode2 = __toESM(require("vscode"));
 
 // src/web/hostfs.ts
 var import_vscode = require("vscode");
@@ -286,6 +286,84 @@ var HostFS = class _HostFS {
     return haystack.substring(0, offset);
   }
 };
+
+// src/web/terminal.ts
+var vscode = __toESM(require("vscode"));
+function createTerminal(peer) {
+  return vscode.window.createTerminal({
+    name: `Terminal`,
+    pty: newPty(peer),
+    location: vscode.TerminalLocation.Editor
+  });
+}
+function newPty(peer) {
+  const writeEmitter = new vscode.EventEmitter();
+  let channel = void 0;
+  let log = vscode.window.createOutputChannel("go-vscode");
+  const dec = new TextDecoder();
+  const enc = new TextEncoder();
+  return {
+    onDidWrite: writeEmitter.event,
+    open: (initialDimensions) => {
+      (async () => {
+        const resp = await peer.call("vscode.Terminal");
+        channel = resp.channel;
+        if (initialDimensions && channel) {
+          const { columns, rows } = initialDimensions;
+          let payload = JSON.stringify({
+            "version": 2,
+            "width": columns,
+            "height": rows,
+            "cmd": ["/bin/bash"],
+            "env": {
+              "TERM": "xterm-256color",
+              "FOO": "BAR"
+            }
+          });
+          channel.write(enc.encode(payload + "\n"));
+        }
+        const b = new Uint8Array(65536);
+        let gotEOF = false;
+        while (gotEOF === false) {
+          const n = await channel.read(b);
+          if (n === null) {
+            gotEOF = true;
+          } else {
+            let recv = dec.decode(b.subarray(0, n));
+            try {
+              let [, , out] = JSON.parse(recv);
+              writeEmitter.fire(out);
+            } catch (e) {
+              log.appendLine(`error: ${e}, len(recv): ${recv.length}`);
+            }
+          }
+        }
+      })();
+    },
+    close: () => {
+      if (channel) {
+        channel.close();
+      }
+    },
+    handleInput: (data) => {
+      if (channel) {
+        let payload = JSON.stringify([0, "i", data]);
+        channel.write(enc.encode(payload + "\n"));
+      }
+    },
+    setDimensions: (dimensions) => {
+      if (channel) {
+        const { columns, rows } = dimensions;
+        let payload = JSON.stringify({
+          "version": 2,
+          "width": columns,
+          "height": rows
+        });
+        channel.write(enc.encode(payload + "\n"));
+      }
+    }
+  };
+}
 
 // src/web/polkadotBridge.ts
 var PolkadotBridge = class {
@@ -2344,177 +2422,9 @@ async function activate(context) {
   context.subscriptions.push(fs);
   const terminal = createTerminal(peer);
   context.subscriptions.push(
-    vscode.commands.registerCommand("extension.createNewTerminal", async () => {
+    vscode2.commands.registerCommand("extension.createNewTerminal", async () => {
       const newTerminal = createTerminal(peer);
     })
   );
-  context.subscriptions.push(
-    vscode.window.registerTerminalProfileProvider(
-      "extension.terminal-profile",
-      {
-        provideTerminalProfile(token) {
-          return {
-            options: {
-              name: "bash",
-              pty: newPty(peer)
-              // location: vscode.TerminalLocation.Editor,
-              // isTransient: false,
-            }
-          };
-        }
-      }
-    )
-  );
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "extension.createNewTerminal2",
-      async () => {
-        vscode.window.showInformationMessage(
-          `appHost: ${vscode.env.appHost}
-appName: ${vscode.env.appName}
-appRoot: ${vscode.env.appRoot}
-isNewAppInstall: ${vscode.env.isNewAppInstall}
-isTelemetryEnabled: ${vscode.env.isTelemetryEnabled}
-language: ${vscode.env.language}
-logLevel: ${vscode.env.logLevel}
-machineId: ${vscode.env.machineId}
-remoteName: ${vscode.env.remoteName}
-sessionId: ${vscode.env.sessionId}
-shell: ${vscode.env.shell}
-uiKind: ${vscode.env.uiKind}
-uriScheme: ${vscode.env.uriScheme}`
-        );
-      }
-    )
-  );
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "extension.createNewTerminal3",
-      async () => {
-        vscode.window.createTerminal({
-          name: `EchoShell`,
-          pty: echoPty(),
-          location: vscode.TerminalLocation.Editor
-        });
-      }
-    )
-  );
-}
-function createTerminal(peer) {
-  return vscode.window.createTerminal({
-    name: `WebShell`,
-    pty: newPty(peer),
-    location: vscode.TerminalLocation.Editor
-  });
-}
-function newPty(peer) {
-  const writeEmitter = new vscode.EventEmitter();
-  let channel = void 0;
-  let log = vscode.window.createOutputChannel("go-vscode");
-  const dec = new TextDecoder();
-  const enc = new TextEncoder();
-  return {
-    onDidWrite: writeEmitter.event,
-    open: (initialDimensions) => {
-      (async () => {
-        const resp = await peer.call("vscode.Terminal");
-        channel = resp.channel;
-        if (initialDimensions && channel) {
-          const { columns, rows } = initialDimensions;
-          let payload = JSON.stringify({
-            "version": 2,
-            "width": columns,
-            "height": rows,
-            "cmd": ["/bin/bash"],
-            "env": {
-              "TERM": "xterm-256color",
-              "FOO": "BAR"
-            }
-          });
-          channel.write(enc.encode(payload + "\n"));
-        }
-        const b = new Uint8Array(65536);
-        let gotEOF = false;
-        while (gotEOF === false) {
-          const n = await channel.read(b);
-          if (n === null) {
-            gotEOF = true;
-          } else {
-            let recv = dec.decode(b.subarray(0, n));
-            try {
-              let [, , out] = JSON.parse(recv);
-              writeEmitter.fire(out);
-            } catch (e) {
-              log.appendLine(`error: ${e}, len(recv): ${recv.length}`);
-            }
-          }
-        }
-      })();
-    },
-    close: () => {
-      if (channel) {
-        channel.close();
-      }
-    },
-    handleInput: (data) => {
-      if (channel) {
-        let payload = JSON.stringify([0, "i", data]);
-        channel.write(enc.encode(payload + "\n"));
-      }
-    },
-    setDimensions: (dimensions) => {
-      if (channel) {
-        const { columns, rows } = dimensions;
-        let payload = JSON.stringify({
-          "version": 2,
-          "width": columns,
-          "height": rows
-        });
-        channel.write(enc.encode(payload + "\n"));
-      }
-    }
-  };
-}
-function echoPty() {
-  const writeEmitter = new vscode.EventEmitter();
-  let log = vscode.window.createOutputChannel("go-vscode-echo");
-  return {
-    onDidWrite: writeEmitter.event,
-    open: (initialDimensions) => {
-      (async () => {
-        if (initialDimensions) {
-          const { columns, rows } = initialDimensions;
-          let payload = JSON.stringify({
-            "version": 2,
-            "width": columns,
-            "height": rows,
-            "cmd": ["/bin/bash"],
-            "env": {
-              "TERM": "xterm-256color",
-              "FOO": "BAR"
-            }
-          });
-          log.appendLine(`open: ${payload}`);
-        }
-      })();
-    },
-    close: () => {
-      log.appendLine(`close`);
-    },
-    handleInput: (data) => {
-      let payload = JSON.stringify([0, "i", data]);
-      writeEmitter.fire(data);
-      log.appendLine(`handleInput: ${payload}`);
-    },
-    setDimensions: (dimensions) => {
-      const { columns, rows } = dimensions;
-      let payload = JSON.stringify({
-        "version": 2,
-        "width": columns,
-        "height": rows
-      });
-      log.appendLine(`setDimensions: ${payload}`);
-    }
-  };
 }
 //# sourceMappingURL=extension.js.map

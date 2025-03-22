@@ -2,8 +2,8 @@
   "name": "codigo-bridge",
   "displayName": "Codigo Bridge",
   "publisher": "btwiuse",
-  "description": "",
-  "version": "0.0.1",
+  "description": "Codigo editor bridge extension",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -11,7 +11,6 @@
     "Other"
   ],
   "activationEvents": [
-    "onTerminalProfile:extension.terminal-profile",
     "onFileSystem:hostfs"
   ],
   "browser": "./dist/web/extension.js",
@@ -25,16 +24,6 @@
           "light": "./resources/icons/new-terminal-light.svg",
           "dark": "./resources/icons/new-terminal-dark.svg"
         }
-      },
-      {
-        "command": "extension.createNewTerminal2",
-        "title": "Create New Terminal2",
-        "category": "Codigo"
-      },
-      {
-        "command": "extension.createNewTerminal3",
-        "title": "Create New Terminal3",
-        "category": "Codigo"
       }
     ],
     "menus": {
@@ -43,14 +32,6 @@
           "when": "isWeb || !isWeb",
           "group": "navigation",
           "command": "extension.createNewTerminal"
-        }
-      ]
-    },
-    "terminal": {
-      "profiles": [
-        {
-          "id": "extension.terminal-profile",
-          "title": "Extension Terminal Profile"
         }
       ]
     }

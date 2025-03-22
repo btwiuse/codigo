@@ -1,10 +1,10 @@
 import "@polkadot/types-augment";
 import {
-  MetadataDef,
   InjectedAccount,
   InjectedAccounts,
   InjectedMetadata,
   InjectedProvider,
+  MetadataDef,
 } from "@polkadot/extension-inject/types";
 
 export class PolkadotBridge {
