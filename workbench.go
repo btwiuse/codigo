@@ -23,7 +23,7 @@ import (
 	"tractor.dev/toolkit-go/duplex/talk"
 )
 
-//go:embed extension assets
+//go:embed assets extension
 var embedded embed.FS
 
 var archivefs fs.FS
@@ -94,6 +94,14 @@ func DownloadAndUnzipVSCode() {
 	}
 }
 
+type BuiltinExtension = any
+
+type GalleryExtensionInfo struct {
+	ID                 string `json:"id"`
+	PreRelease         bool   `json:"preRelease,omitempty"`
+	MigrateStorageFrom string `json:"migrateStorageFrom,omitempty"`
+}
+
 type URIComponents struct {
 	Scheme    string `json:"scheme"`
 	Authority string `json:"authority,omitempty"`
@@ -104,7 +112,7 @@ type URIComponents struct {
 
 type Workbench struct {
 	ProductConfiguration        product.Configuration `json:"productConfiguration"`
-	AdditionalBuiltinExtensions []*URIComponents      `json:"additionalBuiltinExtensions,omitempty"`
+	AdditionalBuiltinExtensions []BuiltinExtension    `json:"additionalBuiltinExtensions,omitempty"`
 	FolderURI                   *URIComponents        `json:"folderUri,omitempty"`
 	InitialColorTheme           ColorScheme           `json:"initialColorTheme,omitempty"`
 
@@ -124,6 +132,11 @@ func (wb *Workbench) setColorScheme(t string) {
 	wb.InitialColorTheme.ThemeType = t
 }
 
+var VSCodigoBridge = &GalleryExtensionInfo{
+	ID:         "btwiuse.codigo-bridge",
+	PreRelease: true,
+}
+
 func (wb *Workbench) ensureExtension(r *http.Request) {
 	origin := r.Header.Get("Origin")
 
@@ -133,23 +146,22 @@ func (wb *Workbench) ensureExtension(r *http.Request) {
 		return
 	}
 
-	abe := &URIComponents{
-		Scheme:    o.Scheme,
-		Authority: o.Host,
-		Path:      "/extension",
-	}
-
 	foundExtension := false
 	for i, e := range wb.AdditionalBuiltinExtensions {
-		if e.Path == "/extension" {
-			wb.AdditionalBuiltinExtensions[i] = abe
-			foundExtension = true
-			break
+		if u, ok := e.(*URIComponents); ok && u.Path != "/extension" {
+			continue
 		}
+		wb.AdditionalBuiltinExtensions[i] = &URIComponents{
+			Scheme:    o.Scheme,
+			Authority: o.Host,
+			Path:      "/extension",
+		}
+		foundExtension = true
+		break
 	}
 
 	if !foundExtension {
-		wb.AdditionalBuiltinExtensions = append(wb.AdditionalBuiltinExtensions, abe)
+		wb.AdditionalBuiltinExtensions = append(wb.AdditionalBuiltinExtensions, VSCodigoBridge)
 	}
 }
 
