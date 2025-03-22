@@ -1,6 +1,12 @@
 {
   "commit": "5555555555555555555555555555555555555555",
   "extensionsGallery": {
+    "serviceUrl": "https://open-vsx.org/vscode/gallery",
+    "itemUrl": "https://open-vsx.org/vscode/item",
+    "resourceUrlTemplate": "https://open-vsx.org/vscode/unpkg/{publisher}/{name}/{version}/{path}",
+    "extensionUrlTemplate": "https://no-cors.deno.dev/https://open-vsx.org/vscode/gallery/{publisher}/{name}/latest"
+  },
+  "_vsc_extensionsGallery": {
     "serviceUrl": "https://no-cors.deno.dev/https://marketplace.visualstudio.com/_apis/public/gallery",
     "resourceUrlTemplate": "https://no-cors.deno.dev/https://{publisher}.vscode-unpkg.net/{publisher}/{name}/{version}/{path}",
     "itemUrl": "https://no-cors.deno.dev/https://marketplace.visualstudio.com/items"

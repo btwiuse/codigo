@@ -9,7 +9,7 @@
   },
   "additionalBuiltinExtensions": [
     {
-      "id": "btwiuse.codigo-extension-pack",
+      "id": "bach.bahk-vs-code-snippets",
       "preRelease": true
     }
   ],
