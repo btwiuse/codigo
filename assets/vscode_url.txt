@@ -1,1 +1,1 @@
-https://github.com/btwiuse/vscodium/releases/download/1.96.4.25081/vscodium-web-1.96.4.25081.tar.gz
+https://github.com/btwiuse/vscodium/releases/download/1.96.4.25084/vscodium-web-1.96.4.25084.tar.gz
