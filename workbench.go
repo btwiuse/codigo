@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/btwiuse/codigo/bridge"
 	"github.com/btwiuse/codigo/product"
@@ -29,11 +28,8 @@ var archivefs fs.FS
 func DownloadAndUnzipVSCode() {
 	vscodeURL := os.Getenv("VSCODE_WEB_URL")
 	if vscodeURL == "" {
-		urlBytes, err := embedded.ReadFile("assets/vscode_url.txt")
-		if err != nil {
-			panic(err)
-		}
-		vscodeURL = strings.TrimSpace(string(urlBytes))
+		repo := "btwiuse/vscodium"
+		vscodeURL = getLatestReleaseURL(repo)
 	}
 
 	homeDir, err := os.UserHomeDir()
