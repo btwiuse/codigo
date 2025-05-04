@@ -121,6 +121,12 @@
     "ms-vscode.vscode-commander"
   ],
   "extensionEnabledApiProposals": {
+    "btwiuse.codigo-bridge": [
+      "ipc"
+    ],
+    "btwiuse.polkadot-bridge": [
+      "ipc"
+    ],
     "vscode.simple-browser": ["externalUriOpener"],
     "vscode.typescript-language-features": [
       "workspaceTrust",

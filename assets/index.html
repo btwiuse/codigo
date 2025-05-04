@@ -97,8 +97,30 @@
     } from "/out/vs/workbench/workbench.web.main.internal.js";
     const response = await fetch("/workbench.json", { method: "POST" });
     const config = await response.json();
+    class MessagePortsController {
+      constructor() {
+        this._webIdeChannel = new MessageChannel();
+
+        const messagePorts = new Map();
+        messagePorts.set(
+          "btwiuse.codigo-bridge",
+          this._webIdeChannel.port2,
+        );
+
+        this._messagePorts = messagePorts;
+      }
+
+      get messagePorts() {
+        return this._messagePorts;
+      }
+
+      onTokenChange() {
+        this._webIdeChannel.port1.postMessage("webide_auth_change");
+      }
+    }
     create(document.body, {
       ...config,
+      messagePorts: new MessagePortsController().messagePorts,
       webviewEndpoint: "/out/vs/workbench/contrib/webview/browser/pre",
       workspaceProvider: {
         workspace: {
