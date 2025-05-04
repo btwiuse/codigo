@@ -139,8 +139,10 @@ func (wb *Workbench) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
 			ServeFileWithFallback(w, r, embedded, "assets/index.html")
-		case "/bridge.js":
-			ServeFileWithFallback(w, r, embedded, "assets/bridge.js")
+		case "/codigoBridge.js":
+			ServeFileWithFallback(w, r, embedded, "assets/codigoBridge.js")
+		case "/polkadotBridge.js":
+			ServeFileWithFallback(w, r, embedded, "assets/polkadotBridge.js")
 		case "/product.json":
 			ServeFileWithFallback(w, r, embedded, "assets/product.json")
 		case "/workbench.json":

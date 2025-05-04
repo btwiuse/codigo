@@ -87,7 +87,8 @@
     ).toString();
   </script>
 
-  <script src="/bridge.js"></script>
+  <script src="/codigoBridge.js"></script>
+  <script src="/polkadotBridge.js"></script>
 
   <script src="/out/nls.messages.js"></script>
   <script type="module">
@@ -100,11 +101,16 @@
     class MessagePortsController {
       constructor() {
         this._webIdeChannel = new MessageChannel();
+        this.polkadotBridgeChannel = new MessageChannel();
 
         const messagePorts = new Map();
         messagePorts.set(
           "btwiuse.codigo-bridge",
           this._webIdeChannel.port2,
+        );
+        messagePorts.set(
+          "btwiuse.polkadot-bridge",
+          this.polkadotBridgeChannel.port2,
         );
 
         this._messagePorts = messagePorts;
@@ -114,13 +120,39 @@
         return this._messagePorts;
       }
 
+      get polkadotBridgePort() {
+        return this.polkadotBridgeChannel.port1;
+      }
+
       onTokenChange() {
         this._webIdeChannel.port1.postMessage("webide_auth_change");
       }
     }
+    const messagePortsController = new MessagePortsController();
+    messagePortsController.polkadotBridgePort.onmessage = async (
+      event,
+    ) => {
+      const { data } = event;
+      const port = messagePortsController.polkadotBridgePort;
+
+      if (data.cmd === "CONNECT") {
+        try {
+          const app = await windowInjectedWeb3().enable(
+            "Polkadot bridge extension",
+          );
+          createBridgeHandler(port, app);
+          port.postMessage({ cmd: "CONNECT_SUCCESS" });
+        } catch (error) {
+          port.postMessage({
+            cmd: "CONNECT_ERROR",
+            error: error.message,
+          });
+        }
+      }
+    };
     create(document.body, {
       ...config,
-      messagePorts: new MessagePortsController().messagePorts,
+      messagePorts: messagePortsController.messagePorts,
       webviewEndpoint: "/out/vs/workbench/contrib/webview/browser/pre",
       workspaceProvider: {
         workspace: {
