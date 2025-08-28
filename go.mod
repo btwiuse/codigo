@@ -72,7 +72,7 @@ require (
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/sorairolake/lzip-go v0.3.5 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
-	github.com/ulikunitz/xz v0.5.12 // indirect
+	github.com/ulikunitz/xz v0.5.14 // indirect
 	github.com/webteleport/auth v0.0.9 // indirect
 	github.com/webteleport/webteleport v0.5.39 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
