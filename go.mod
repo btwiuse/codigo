@@ -67,7 +67,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/quic-go/quic-go v0.49.0 // indirect
+	github.com/quic-go/quic-go v0.49.1 // indirect
 	github.com/quic-go/webtransport-go v0.8.1-0.20241018022711-4ac2c9250e66 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/sorairolake/lzip-go v0.3.5 // indirect
